@@ -3,17 +3,7 @@
 // Top-level TinyTapeout wrapper
 module tt_um_plc_prg (
     input  [7:0] ui_in,     // Inputs from chip pads
-                           // ui_in[0] = clk
-                           // ui_in[1] = rst
-                           // ui_in[2] = start
-                           // ui_in[3] = stop
-                           // ui_in[4] = sel0
-                           // ui_in[5] = AUTO
-                           // ui_in[6] = MAN
-                           // ui_in[7] = unused
     output [7:0] uo_out,    // Outputs to chip pads
-                           // uo_out[0] = Control
-                           // uo_out[1] = Q
     input  [7:0] uio_in,    // Unused
     output [7:0] uio_out,   // Unused
     output [7:0] uio_oe,    // Unused
@@ -40,7 +30,10 @@ module tt_um_plc_prg (
     wire Q;
 
     // Core PLC logic instantiation
-    PLC_PRG core (
+    PLC_PRG #(
+        .TON_PRESET(150_000_000), // 3s @ 50 MHz
+        .CTU_PRESET(5)            // Counter preset
+    ) core (
         .clk(clk_in),
         .rst(rst),
         .start(start),
@@ -60,8 +53,11 @@ module tt_um_plc_prg (
 endmodule
 
 
-// Original PLC logic (unchanged)
-module PLC_PRG (
+// PLC logic with parameters
+module PLC_PRG #(
+    parameter TON_PRESET = 150_000_000, // default 3s @ 50 MHz
+    parameter CTU_PRESET = 5
+)(
     input  wire clk,        
     input  wire rst,        
     input  wire start,
@@ -74,9 +70,9 @@ module PLC_PRG (
 );
     // Internal signals
     reg latch_q;                 
-    reg [27:0] ton_counter;      
+    reg [$clog2(TON_PRESET):0] ton_counter;      
     reg ton_done;                
-    reg [3:0] ctu_count;         
+    reg [$clog2(CTU_PRESET+1):0] ctu_count;         
     reg ctu_done;                
 
     reg ton_done_d;
@@ -91,13 +87,13 @@ module PLC_PRG (
             latch_q <= 1'b0;
     end
 
-    // TON delay (3s @ 50MHz)
+    // TON delay
     always @(posedge clk or posedge rst) begin
         if (rst) begin
             ton_counter <= 0;
             ton_done    <= 0;
         end else if (latch_q) begin
-            if (ton_counter < 150_000_000) begin
+            if (ton_counter < TON_PRESET) begin
                 ton_counter <= ton_counter + 1;
                 ton_done <= 1'b0;
             end else begin
@@ -118,13 +114,13 @@ module PLC_PRG (
     end
     wire ton_done_rise = ton_done & ~ton_done_d;
 
-    // CTU counter (Preset = 5)
+    // CTU counter
     always @(posedge clk or posedge rst) begin
         if (rst) begin
             ctu_count <= 0;
             ctu_done  <= 0;
         end else if (ton_done_rise) begin
-            if (ctu_count < 5) begin
+            if (ctu_count < CTU_PRESET) begin
                 ctu_count <= ctu_count + 1;
                 ctu_done <= 1'b0;
             end else begin
