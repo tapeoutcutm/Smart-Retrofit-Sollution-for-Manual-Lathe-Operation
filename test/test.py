@@ -1,4 +1,3 @@
-# SPDX-FileCopyrightText: © 2024 Tiny Tapeout
 # SPDX-License-Identifier: Apache-2.0
 
 import cocotb
@@ -8,33 +7,74 @@ from cocotb.triggers import ClockCycles
 
 @cocotb.test()
 async def test_project(dut):
-    dut._log.info("Start")
+    dut._log.info("Start PLC_PRG test")
 
-    # Set the clock period to 10 us (100 KHz)
-    clock = Clock(dut.clk, 10, units="us")
+    # Clock setup: 50 MHz → 20 ns period
+    clock = Clock(dut.clk, 20, units="ns")
     cocotb.start_soon(clock.start())
 
-    # Reset
-    dut._log.info("Reset")
+    # Reset and enable
     dut.ena.value = 1
-    dut.ui_in.value = 0
-    dut.uio_in.value = 0
     dut.rst_n.value = 0
-    await ClockCycles(dut.clk, 10)
+    dut.ui_in.value = 0
+    await ClockCycles(dut.clk, 5)
     dut.rst_n.value = 1
 
-    dut._log.info("Test project behavior")
+    # Helper aliases for outputs
+    def control(): return int(dut.uo_out.value & 0b00000001)
+    def q():       return int((dut.uo_out.value >> 1) & 0b1)
 
-    # Set the input values you want to test
-    dut.ui_in.value = 20
-    dut.uio_in.value = 30
+    # -----------------------------
+    # Test 1: AUTO mode with START
+    # -----------------------------
+    dut._log.info("Test 1: AUTO mode with START")
+    dut.ui_in.value = 0
+    dut.ui_in.value = (1 << 5)  # AUTO=1
+    dut.ui_in.value |= (1 << 2)  # START=1
+    await ClockCycles(dut.clk, 2)
+    dut.ui_in.value &= ~(1 << 2)  # release START
 
-    # Wait for one clock cycle to see the output values
-    await ClockCycles(dut.clk, 1)
+    # Wait for short TON (simulation friendly: reduce counter in RTL)
+    await ClockCycles(dut.clk, 30)
 
-    # The following assersion is just an example of how to check the output values.
-    # Change it to match the actual expected output of your module:
-    assert dut.uo_out.value == 50
+    assert control() == 1, f"Expected Control=1 in AUTO mode, got {control()}"
 
-    # Keep testing the module by changing the input values, waiting for
-    # one or more clock cycles, and asserting the expected output values.
+    # -----------------------------
+    # Test 2: AUTO → STOP resets latch
+    # -----------------------------
+    dut._log.info("Test 2: STOP signal resets latch")
+    dut.ui_in.value |= (1 << 3)  # STOP=1
+    await ClockCycles(dut.clk, 2)
+    dut.ui_in.value &= ~(1 << 3)
+    await ClockCycles(dut.clk, 5)
+
+    assert control() == 0, f"Expected Control=0 after STOP, got {control()}"
+
+    # -----------------------------
+    # Test 3: MANUAL mode follows START
+    # -----------------------------
+    dut._log.info("Test 3: MANUAL mode follows START input")
+    dut.ui_in.value = (1 << 6)  # MAN=1
+    await ClockCycles(dut.clk, 2)
+
+    dut.ui_in.value |= (1 << 2)  # START=1
+    await ClockCycles(dut.clk, 2)
+    assert control() == 1, f"Expected Control=1 in MANUAL mode, got {control()}"
+
+    dut.ui_in.value &= ~(1 << 2)  # START=0
+    await ClockCycles(dut.clk, 2)
+    assert control() == 0, f"Expected Control=0 after START=0 in MANUAL, got {control()}"
+
+    # -----------------------------
+    # Test 4: CTU increments on TON done
+    # -----------------------------
+    dut._log.info("Test 4: CTU increments after TON done pulses")
+    dut.ui_in.value = (1 << 5)  # AUTO=1
+    for i in range(6):  # preset=5, so after 5 TON pulses Q=1
+        dut.ui_in.value |= (1 << 2)  # START=1
+        await ClockCycles(dut.clk, 2)
+        dut.ui_in.value &= ~(1 << 2)
+        await ClockCycles(dut.clk, 25)  # wait for TON
+    assert q() == 1, f"Expected Q=1 after 5 TON events, got {q()}"
+
+    dut._log.info("All test cases passed ✅")
