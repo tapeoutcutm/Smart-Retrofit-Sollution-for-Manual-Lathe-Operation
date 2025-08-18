@@ -6,8 +6,10 @@ async def reset_dut(dut):
     """Reset helper"""
     dut._log.info("Applying reset...")
     dut.rst_n.value = 0
+    dut.ena.value = 0
     await Timer(20, units="ns")
     dut.rst_n.value = 1
+    dut.ena.value = 1  # <-- Enable DUT after reset
     await RisingEdge(dut.clk)
     dut._log.info("Reset released.")
 
