@@ -77,4 +77,4 @@ async def test_project(dut):
         await ClockCycles(dut.clk, 25)  # wait for TON
     assert q() == 1, f"Expected Q=1 after 5 TON events, got {q()}"
 
-    dut._log.info("All test cases passed ✅")
+    dut._log.info("All test cases passed ")
