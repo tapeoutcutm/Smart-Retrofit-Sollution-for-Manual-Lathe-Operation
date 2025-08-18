@@ -26,6 +26,7 @@ module tt_um_plc_prg (
     reg [$clog2(TON_PRESET):0] counter;
     reg timer_done;
     reg start_prev;
+    wire start_edge = start && !start_prev;
     
     always @(posedge clk or posedge reset) begin
         if (reset) begin
@@ -35,9 +36,6 @@ module tt_um_plc_prg (
             start_prev  <= 0;
         end else if (ena) begin
             start_prev <= start;
-            
-            // Detect rising edge of start
-            wire start_edge = start && !start_prev;
             
             if (MAN && start) begin
                 // Manual mode: immediate control when start is high
