@@ -7,7 +7,7 @@ from cocotb.triggers import ClockCycles
 
 @cocotb.test()
 async def test_project(dut):
-    dut._log.info("Start PLC_PRG smoke test (non-failing)")
+    dut._log.info("Start PLC_PRG smoke test")
 
     # Clock setup: 50 MHz → 20 ns period
     clock = Clock(dut.clk, 20, units="ns")
@@ -21,8 +21,11 @@ async def test_project(dut):
     dut.rst_n.value = 1
 
     # Helper aliases for outputs
-    def control(): return int(dut.uo_out.value & 0b00000001)
-    def q():       return int((dut.uo_out.value >> 1) & 0b1)
+    def control(): 
+        return int(dut.uo_out.value & 0b1)
+
+    def q():       
+        return int((dut.uo_out.value >> 1) & 0b1)
 
     # -----------------------------
     # Test 1: AUTO mode with START
@@ -33,6 +36,7 @@ async def test_project(dut):
     dut.ui_in.value &= ~(1 << 2)  # release START
     await ClockCycles(dut.clk, 30)
     dut._log.info(f"[Check] Control={control()} (expected 1 in AUTO)")
+    assert control() == 1, f"FAIL: Expected Control=1 in AUTO mode, got {control()}"
 
     # -----------------------------
     # Test 2: AUTO → STOP resets latch
@@ -43,6 +47,7 @@ async def test_project(dut):
     dut.ui_in.value &= ~(1 << 3)
     await ClockCycles(dut.clk, 5)
     dut._log.info(f"[Check] Control={control()} (expected 0 after STOP)")
+    assert control() == 0, f"FAIL: Expected Control=0 after STOP, got {control()}"
 
     # -----------------------------
     # Test 3: MANUAL mode follows START
@@ -53,9 +58,12 @@ async def test_project(dut):
     dut.ui_in.value |= (1 << 2)  # START=1
     await ClockCycles(dut.clk, 2)
     dut._log.info(f"[Check] Control={control()} (expected 1 in MANUAL)")
+    assert control() == 1, f"FAIL: Expected Control=1 in MANUAL when START=1, got {control()}"
+
     dut.ui_in.value &= ~(1 << 2)  # START=0
     await ClockCycles(dut.clk, 2)
     dut._log.info(f"[Check] Control={control()} (expected 0 in MANUAL when START=0)")
+    assert control() == 0, f"FAIL: Expected Control=0 in MANUAL when START=0, got {control()}"
 
     # -----------------------------
     # Test 4: CTU increments on TON done
@@ -68,15 +76,9 @@ async def test_project(dut):
         dut.ui_in.value &= ~(1 << 2)
         await ClockCycles(dut.clk, 25)
     dut._log.info(f"[Check] Q={q()} (expected 1 after 5 TON pulses)")
+    assert q() == 1, f"FAIL: Expected Q=1 after 5 TON pulses, got {q()}"
 
     # -----------------------------
     # Wrap up
     # -----------------------------
-    dut._log.info("Smoke test completed (all checks logged, no failures)")
-
-    # Keep assertions commented for now – enable later when DUT is ready
-    # assert control() == 1, "Expected Control=1 in AUTO mode"
-    # assert control() == 0, "Expected Control=0 after STOP"
-    # assert control() == 1, "Expected Control=1 in MANUAL when START=1"
-    # assert control() == 0, "Expected Control=0 in MANUAL when START=0"
-    # assert q() == 1, "Expected Q=1 after 5 TON pulses"
+    dut._log.info("Smoke test completed successfully ✅")
