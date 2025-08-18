@@ -25,76 +25,82 @@ async def clock_gen(dut):
 
 
 def log_signals(dut, tag=""):
-    """Helper to log DUT inputs and outputs"""
+    """Log DUT signal states"""
     dut._log.info(
-        f"[{tag}] START={int(dut.ui_in.value[0])} "
-        f"AUTO={int(dut.ui_in.value[1])} "
-        f"MAN={int(dut.ui_in.value[2])} "
-        f"ENA={int(dut.ena.value)} "
+        f"[{tag}] START={int(dut.ui_in.value[0])}, "
+        f"AUTO={int(dut.ui_in.value[1])}, "
+        f"MAN={int(dut.ui_in.value[2])}, "
+        f"ENA={int(dut.ena.value)}, "
         f"Control={int(dut.uo_out.value[0])}"
     )
 
 
 @cocotb.test()
 async def test_manual_mode(dut):
-    """Manual mode should raise Control immediately on start"""
+    """Test manual mode (immediate Control HIGH)"""
     cocotb.start_soon(clock_gen(dut))
     await reset_dut(dut)
 
-    dut.ui_in.value = 0b00000101  # MAN=1, START=1
+    # Apply MAN=1, START=1
+    dut.ui_in.value = 0b00000101
     await RisingEdge(dut.clk)
     await RisingEdge(dut.clk)
+
+    log_signals(dut, "ManualMode-Active")
     control = int(dut.uo_out.value[0])
-    log_signals(dut, "ManualMode-1")
-    assert control == 1, f"Manual mode failed: Control={control}, expected 1"
+    assert control == 1, "Manual mode failed: Control should be HIGH"
 
     # Release start
-    dut.ui_in.value = 0b00000100  # MAN=1, START=0
+    dut.ui_in.value = 0b00000100
     await RisingEdge(dut.clk)
     await RisingEdge(dut.clk)
+
+    log_signals(dut, "ManualMode-Release")
     control = int(dut.uo_out.value[0])
-    log_signals(dut, "ManualMode-2")
-    assert control == 0, f"Manual release failed: Control={control}, expected 0"
+    assert control == 0, "Manual mode release failed: Control should be LOW"
 
 
 @cocotb.test()
 async def test_auto_mode(dut):
-    """Auto mode should raise Control after delay"""
+    """Test auto mode (Control HIGH after delay)"""
     cocotb.start_soon(clock_gen(dut))
     await reset_dut(dut)
 
-    dut.ui_in.value = 0b00000011  # AUTO=1, START=1
+    # Apply AUTO=1, START=1
+    dut.ui_in.value = 0b00000011
     await RisingEdge(dut.clk)
-    log_signals(dut, "AutoMode-start")
+    log_signals(dut, "AutoMode-Start")
 
-    for i in range(25):  # wait > TON_PRESET
+    # Wait > preset (20 in sim)
+    for i in range(25):
         await RisingEdge(dut.clk)
 
+    log_signals(dut, "AutoMode-AfterDelay")
     control = int(dut.uo_out.value[0])
-    log_signals(dut, "AutoMode-final")
-    assert control == 1, f"Auto mode failed: Control={control}, expected 1"
+    assert control == 1, "Auto mode failed: Control should be HIGH after delay"
 
     # Release start
-    dut.ui_in.value = 0b00000010  # AUTO=1, START=0
+    dut.ui_in.value = 0b00000010
     await RisingEdge(dut.clk)
     await RisingEdge(dut.clk)
+
+    log_signals(dut, "AutoMode-Release")
     control = int(dut.uo_out.value[0])
-    log_signals(dut, "AutoMode-release")
-    assert control == 0, f"Auto release failed: Control={control}, expected 0"
+    assert control == 0, "Auto mode release failed: Control should be LOW"
 
 
 @cocotb.test()
 async def test_reset(dut):
-    """Reset should clear Control"""
+    """Test that reset clears Control"""
     cocotb.start_soon(clock_gen(dut))
     await reset_dut(dut)
 
-    # Apply manual condition
+    # Apply manual start
     dut.ui_in.value = 0b00000101  # MAN=1, START=1
     await RisingEdge(dut.clk)
     await RisingEdge(dut.clk)
 
-    # Capture values
+    # Read values before reset
     control_val = int(dut.uo_out.value[0])
     man_val = int(dut.ui_in.value[2])
     start_val = int(dut.ui_in.value[0])
@@ -116,4 +122,5 @@ async def test_reset(dut):
 
     control_after = int(dut.uo_out.value[0])
     log_signals(dut, "AfterReset")
-    assert control_after == 0, f"Reset failed: Control={control_after}, expected 0"
+
+    assert control_after == 0, "Reset failed: Control should be LOW"
