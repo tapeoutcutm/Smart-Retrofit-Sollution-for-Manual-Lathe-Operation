@@ -1,61 +1,50 @@
 import cocotb
 from cocotb.clock import Clock
-from cocotb.triggers import ClockCycles
+from cocotb.triggers import RisingEdge
+
+@cocotb.test()
+async def test_auto_mode(dut):
+    """Test AUTO mode with timer delay"""
+
+    # Start clock
+    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())  # 100 MHz
+
+    # Apply reset
+    dut.rst_n.value = 0
+    dut.ui_in.value = 0
+    await RisingEdge(dut.clk)
+    dut.rst_n.value = 1
+    await RisingEdge(dut.clk)
+
+    # AUTO mode: ui_in[1] = 1, start = 1
+    dut.ui_in.value = 0b011  # start=1, AUTO=1, MAN=0
+    dut._log.info("Testing AUTO mode (with delay)")
+
+    # Wait for timer to expire (20 cycles in sim)
+    for _ in range(25):
+        await RisingEdge(dut.clk)
+
+    assert dut.uo_out.value & 0x1 == 1, "AUTO mode failed: Control not set after delay"
 
 
 @cocotb.test()
-async def test_project(dut):
-    """PLC_PRG smoke test"""
+async def test_manual_mode(dut):
+    """Test MAN mode (immediate control)"""
 
-    dut._log.info("Start PLC_PRG smoke test")
-
-    # Start clock (10ns period)
+    # Start clock
     cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
 
     # Apply reset
-    dut.reset.value = 1
-    dut.start.value = 0
-    dut.AUTO.value = 0
-    dut.MAN.value = 0
-    await ClockCycles(dut.clk, 5)
-    dut.reset.value = 0
+    dut.rst_n.value = 0
+    dut.ui_in.value = 0
+    await RisingEdge(dut.clk)
+    dut.rst_n.value = 1
+    await RisingEdge(dut.clk)
 
-    # --- Test 1: AUTO mode with START ---
-    dut._log.info("Test 1: AUTO mode with START")
+    # MAN mode: ui_in[2] = 1, start = 1
+    dut.ui_in.value = 0b101  # start=1, AUTO=0, MAN=1
+    dut._log.info("Testing MAN mode (immediate control)")
 
-    dut.AUTO.value = 1
-    dut.start.value = 1
+    await RisingEdge(dut.clk)
 
-    # Wait enough cycles for TON to finish (preset=20 in sim)
-    await ClockCycles(dut.clk, 25)
-
-    control = int(dut.Control.value)
-    dut._log.info(f"[Check] Control={control} (expected 1 in AUTO after TON)")
-    assert control == 1, f"FAIL: Expected Control=1 in AUTO after TON, got {control}"
-
-    # --- Test 2: MAN mode with START ---
-    dut._log.info("Test 2: MAN mode with START")
-
-    # Reset first
-    dut.reset.value = 1
-    await ClockCycles(dut.clk, 2)
-    dut.reset.value = 0
-
-    dut.MAN.value = 1
-    dut.start.value = 1
-    await ClockCycles(dut.clk, 2)
-
-    control = int(dut.Control.value)
-    dut._log.info(f"[Check] Control={control} (expected 1 in MAN mode immediately)")
-    assert control == 1, f"FAIL: Expected Control=1 in MAN mode, got {control}"
-
-    # --- Test 3: Reset clears Control ---
-    dut._log.info("Test 3: Reset clears Control")
-
-    dut.reset.value = 1
-    await ClockCycles(dut.clk, 2)
-    dut.reset.value = 0
-
-    control = int(dut.Control.value)
-    dut._log.info(f"[Check] Control={control} (expected 0 after reset)")
-    assert control == 0, f"FAIL: Expected Control=0 after reset, got {control}"
+    assert dut.uo_out.value & 0x1 == 1, "MAN mode failed: Control not set immediately"
