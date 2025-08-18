@@ -14,7 +14,6 @@ module tt_um_plc_prg (
     wire start = ui_in[0];
     wire AUTO  = ui_in[1];
     wire MAN   = ui_in[2];
-    reg Control;
     
     // Timer preset
 `ifdef COCOTB_SIM
@@ -25,47 +24,31 @@ module tt_um_plc_prg (
     
     reg [$clog2(TON_PRESET):0] counter;
     reg timer_done;
-    reg start_prev;
-    wire start_edge = start && !start_prev;
+    reg Control;
     
     always @(posedge clk or posedge reset) begin
         if (reset) begin
             counter     <= 0;
             timer_done  <= 0;
             Control     <= 0;
-            start_prev  <= 0;
         end else if (ena) begin
-            start_prev <= start;
-            
             if (MAN && start) begin
-                // Manual mode: immediate control when start is high
+                // Manual mode: immediate control when start is active
                 Control <= 1;
-                timer_done <= 1;
                 counter <= 0;
-            end else if (AUTO) begin
-                if (start_edge) begin
-                    // Auto mode: start timer on rising edge of start
-                    counter <= 0;
-                    timer_done <= 0;
+                timer_done <= 1;
+            end else if (AUTO && start) begin
+                // Auto mode: timer-based control
+                if (counter < TON_PRESET) begin
+                    counter <= counter + 1;
                     Control <= 0;
-                end else if (start && !timer_done) begin
-                    // Continue counting while start is high and timer not done
-                    if (counter < TON_PRESET) begin
-                        counter <= counter + 1;
-                        Control <= 0;
-                    end else begin
-                        timer_done <= 1;
-                        Control <= 1;
-                    end
-                end else if (!start) begin
-                    // Reset when start goes low
-                    counter <= 0;
                     timer_done <= 0;
-                    Control <= 0;
+                end else begin
+                    Control <= 1;
+                    timer_done <= 1;
                 end
-                // If start is high and timer_done is true, maintain Control = 1
             end else begin
-                // Neither MAN nor AUTO active: reset everything
+                // No valid mode or start not active: reset everything
                 counter <= 0;
                 timer_done <= 0;
                 Control <= 0;
