@@ -1,6 +1,6 @@
 `timescale 1ns / 1ps
 
-module PLC_PRG (
+module tt_um_plc_prg (
     input  wire clk,
     input  wire reset,
     input  wire start,
