@@ -19,11 +19,14 @@ module tt_um_plc_prg (
 
     reg Control;
 
-    // Timer preset (different in simulation vs hardware)
+    // Default hardware preset
+    parameter TON_PRESET = 150_000_000;     
+
+    // Short delay for cocotb simulation
 `ifdef COCOTB_SIM
-    parameter TON_PRESET = 20;              // Short delay for cocotb sim
+    localparam EFFECTIVE_PRESET = 20;
 `else
-    parameter TON_PRESET = 150_000_000;     // 3s delay at 50MHz (real HW)
+    localparam EFFECTIVE_PRESET = TON_PRESET;
 `endif
 
     reg [$clog2(TON_PRESET):0] counter;
@@ -38,7 +41,7 @@ module tt_um_plc_prg (
             if (AUTO && start) begin
                 // Timer ON delay
                 if (!timer_done) begin
-                    if (counter < TON_PRESET) begin
+                    if (counter < EFFECTIVE_PRESET) begin
                         counter <= counter + 1;
                     end else begin
                         timer_done <= 1;
@@ -46,7 +49,7 @@ module tt_um_plc_prg (
                     end
                 end
             end else if (MAN && start) begin
-                // Manual mode: immediate control (next clk edge)
+                // Manual mode: immediate control
                 Control    <= 1;
                 timer_done <= 1;
             end else begin
