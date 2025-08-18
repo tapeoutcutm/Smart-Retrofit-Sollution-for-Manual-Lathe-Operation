@@ -1,6 +1,6 @@
 `timescale 1ns/1ps
 
-module tb;
+module tb_tt_um_plc_prg;
     reg  [7:0] ui_in;
     wire [7:0] uo_out;
     reg  [7:0] uio_in;
