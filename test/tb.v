@@ -1,49 +1,80 @@
-`default_nettype none
 `timescale 1ns / 1ps
+module tb_PLC_PRG;
 
-/* This testbench just instantiates the module and makes some convenient wires
-   that can be driven / tested by the cocotb test.py.
-*/
-module tb ();
+    // Inputs
+    reg clk;
+    reg rst;
+    reg start;
+    reg stop;
+    reg sel0;     // not used in DUT logic now, but kept
+    reg AUTO;
+    reg MAN;
 
-  // Dump the signals to a VCD file. You can view it with gtkwave or surfer.
-  initial begin
-    $dumpfile("tb.vcd");
-    $dumpvars(0, tb);
-    #1;
-  end
+    // Outputs
+    wire Control;
+    wire Q;
 
-  // Wire up the inputs and outputs:
-  reg clk;
-  reg rst_n;
-  reg ena;
-  reg [7:0] ui_in;
-  reg [7:0] uio_in;
-  wire [7:0] uo_out;
-  wire [7:0] uio_out;
-  wire [7:0] uio_oe;
-`ifdef GL_TEST
-  wire VPWR = 1'b1;
-  wire VGND = 1'b0;
-`endif
+    // Instantiate DUT
+    PLC_PRG dut (
+        .clk(clk),
+        .rst(rst),
+        .start(start),
+        .stop(stop),
+        .sel0(sel0),
+        .AUTO(AUTO),
+        .MAN(MAN),
+        .Control(Control),
+        .Q(Q)
+    );
 
-  // Replace tt_um_example with your module name:
-  tt_um_example user_project (
+    // Clock generation: 50 MHz → 20ns period
+    initial begin
+        clk = 0;
+        forever #10 clk = ~clk; // toggle every 10ns
+    end
 
-      // Include power ports for the Gate Level test:
-`ifdef GL_TEST
-      .VPWR(VPWR),
-      .VGND(VGND),
-`endif
+    // Apply stimulus
+    initial begin
+        // Initialize inputs
+        rst   = 1;
+        start = 0;
+        stop  = 0;
+        sel0  = 0;
+        AUTO  = 0;
+        MAN   = 0;
 
-      .ui_in  (ui_in),    // Dedicated inputs
-      .uo_out (uo_out),   // Dedicated outputs
-      .uio_in (uio_in),   // IOs: Input path
-      .uio_out(uio_out),  // IOs: Output path
-      .uio_oe (uio_oe),   // IOs: Enable path (active high: 0=input, 1=output)
-      .ena    (ena),      // enable - goes high when design is selected
-      .clk    (clk),      // clock
-      .rst_n  (rst_n)     // not reset
-  );
+        // Apply reset for 50ns
+        #50;
+        rst = 0;
+        $display("[%0t] Release reset", $time);
+
+        // --------- MANUAL MODE TEST ---------
+        MAN = 1;
+        $display("[%0t] MAN mode active", $time);
+        #50 start = 1;    // press start
+        #100 start = 0;   // release start
+        #500;
+        stop = 1;         // press stop
+        #50 stop = 0;
+
+        // --------- AUTO MODE TEST ---------
+        MAN  = 0;
+        AUTO = 1;
+        $display("[%0t] AUTO mode active", $time);
+
+        #100 start = 1;   // set latch 
+        #20 start = 0;
+
+        // Wait time (simulate shorter time for TON)
+        #200000; // ~200us (reduce ton preset in DUT for faster simulation if desired)
+
+        stop = 1;         // reset latch
+        #20 stop = 0;
+
+        // --------- END SIMULATION ---------
+        #1000;
+        $display("[%0t] End simulation", $time);
+        $stop;
+    end
 
 endmodule
