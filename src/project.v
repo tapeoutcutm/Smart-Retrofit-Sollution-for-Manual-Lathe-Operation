@@ -32,23 +32,38 @@ module tt_um_plc_prg (
             timer_done  <= 0;
             Control     <= 0;
         end else if (ena) begin
-            if (MAN && start) begin
-                // Manual mode: immediate control when start is active
-                Control <= 1;
-                counter <= 0;
-                timer_done <= 1;
-            end else if (AUTO && start) begin
-                // Auto mode: timer-based control
-                if (counter < TON_PRESET) begin
-                    counter <= counter + 1;
-                    Control <= 0;
-                    timer_done <= 0;
-                end else begin
+            if (MAN) begin
+                if (start) begin
+                    // Manual mode: immediate control when start is active
                     Control <= 1;
+                    counter <= 0;
                     timer_done <= 1;
+                end else begin
+                    // Manual mode but start not active
+                    Control <= 0;
+                    counter <= 0;
+                    timer_done <= 0;
+                end
+            end else if (AUTO) begin
+                if (start) begin
+                    // Auto mode: timer-based control
+                    if (counter < TON_PRESET) begin
+                        counter <= counter + 1;
+                        Control <= 0;
+                        timer_done <= 0;
+                    end else begin
+                        Control <= 1;
+                        timer_done <= 1;
+                        // Keep counter at max to maintain state
+                    end
+                end else begin
+                    // Auto mode but start not active: reset
+                    counter <= 0;
+                    timer_done <= 0;
+                    Control <= 0;
                 end
             end else begin
-                // No valid mode or start not active: reset everything
+                // Neither MAN nor AUTO active: reset everything
                 counter <= 0;
                 timer_done <= 0;
                 Control <= 0;
