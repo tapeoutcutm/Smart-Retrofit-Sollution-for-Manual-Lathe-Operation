@@ -10,7 +10,7 @@ module tt_um_plc_prg (
     input  wire       rst_n     // async active-low reset
 );
     // Map UI bits
-    wire reset = ~rst_n;   // active high reset internally
+    wire reset = ~rst_n;
     wire start = ui_in[0];
     wire AUTO  = ui_in[1];
     wire MAN   = ui_in[2];
@@ -23,56 +23,44 @@ module tt_um_plc_prg (
 `endif
     
     reg [$clog2(TON_PRESET):0] counter;
-    reg timer_done;
     reg Control;
     
     always @(posedge clk or posedge reset) begin
         if (reset) begin
-            counter     <= 0;
-            timer_done  <= 0;
-            Control     <= 0;
+            counter <= 0;
+            Control <= 0;
         end else if (ena) begin
+            // Manual mode has priority over auto mode
             if (MAN) begin
-                if (start) begin
-                    // Manual mode: immediate control when start is active
-                    Control <= 1;
-                    counter <= 0;
-                    timer_done <= 1;
-                end else begin
-                    // Manual mode but start not active
-                    Control <= 0;
-                    counter <= 0;
-                    timer_done <= 0;
-                end
+                // Manual mode: Control follows start immediately
+                Control <= start;
+                counter <= 0;  // Reset counter in manual mode
             end else if (AUTO) begin
+                // Auto mode: timer-based control
                 if (start) begin
-                    // Auto mode: timer-based control
-                    if (counter < TON_PRESET) begin
+                    if (counter >= TON_PRESET) begin
+                        // Timer expired, activate control
+                        Control <= 1;
+                    end else begin
+                        // Still counting
                         counter <= counter + 1;
                         Control <= 0;
-                        timer_done <= 0;
-                    end else begin
-                        Control <= 1;
-                        timer_done <= 1;
-                        // Keep counter at max to maintain state
                     end
                 end else begin
-                    // Auto mode but start not active: reset
+                    // Start not active in auto mode, reset
                     counter <= 0;
-                    timer_done <= 0;
                     Control <= 0;
                 end
             end else begin
-                // Neither MAN nor AUTO active: reset everything
+                // No mode selected, reset everything
                 counter <= 0;
-                timer_done <= 0;
                 Control <= 0;
             end
         end
     end
     
-    // Map output
-    assign uo_out[0] = Control;  // only using bit[0]
+    // Map outputs
+    assign uo_out[0] = Control;
     assign uo_out[7:1] = 7'b0;
     
     // Not using bidirectional IOs
