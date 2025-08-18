@@ -46,7 +46,7 @@ module tt_um_plc_prg (
                     end
                 end
             end else if (MAN && start) begin
-                // Manual mode: immediate control
+                // Manual mode: immediate control (next clk edge)
                 Control    <= 1;
                 timer_done <= 1;
             end else begin
