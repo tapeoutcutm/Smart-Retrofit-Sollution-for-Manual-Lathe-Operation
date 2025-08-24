@@ -36,6 +36,8 @@ The goal of this project is to showcase the **end-to-end flow of hardware design
 
 ## 📂 Repository Structure
 
+```
+.
 ├── .devcontainer/          # Dev container for reproducible builds
 │   ├── Dockerfile
 │   ├── copy_tt_support_tools.sh
@@ -71,6 +73,9 @@ The goal of this project is to showcase the **end-to-end flow of hardware design
 ├── README.md               # Project documentation
 └── info.yaml               # TinyTapeout configuration
 ```
+
+---
+
 ## 🔧 Installation & Setup
 
 ### 1. Clone the Repository
