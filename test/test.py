@@ -31,7 +31,7 @@ def log_signals(dut, tag=""):
         f"AUTO={int(dut.ui_in.value[1])}, "
         f"MAN={int(dut.ui_in.value[2])}, "
         f"ENA={int(dut.ena.value)}, "
-        #f"Control={int(dut.uo_out.value[0])}"
+        f"Control={int(dut.uo_out.value[0])}"
     )
 
 
@@ -41,7 +41,7 @@ async def test_manual_mode(dut):
     cocotb.start_soon(clock_gen(dut))
     await reset_dut(dut)
 
-    # Apply MAN=1, START=1
+    #Apply MAN=1, START=1
     dut.ui_in.value = 0b00000101
     await RisingEdge(dut.clk)
     await RisingEdge(dut.clk)
@@ -66,10 +66,10 @@ async def test_auto_mode(dut):
     cocotb.start_soon(clock_gen(dut))
     await reset_dut(dut)
 
-    # Apply AUTO=1, START=1
+    #Apply AUTO=1, START=1
     dut.ui_in.value = 0b00000011
     await RisingEdge(dut.clk)
-    #log_signals(dut, "AutoMode-Start")
+    log_signals(dut, "AutoMode-Start")
 
     # Wait > preset (20 in sim)
     for i in range(25):
@@ -101,7 +101,7 @@ async def test_reset(dut):
     await RisingEdge(dut.clk)
 
     # Read values before reset
-  #  control_val = int(dut.uo_out.value[0])
+  control_val = int(dut.uo_out.value[0])
     man_val = int(dut.ui_in.value[2])
     start_val = int(dut.ui_in.value[0])
     ena_val = int(dut.ena.value)
