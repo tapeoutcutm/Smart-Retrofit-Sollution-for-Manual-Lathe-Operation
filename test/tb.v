@@ -109,8 +109,7 @@ module tb_tt_um_plc_prg;
         $dumpvars(0, tb_tt_um_plc_prg);
         
         $display("Time\tRst_n\tStart\tAUTO\tMAN\tControl\tCounter");
-        $monitor("%0t\t%b\t%b\t%b\t%b\t%b\t%0d", 
-                 $time, rst_n, start, AUTO, MAN, Control, dut.counter);
+        $monitor("%0t\t%b\t%b\t%b\t%b\t%b\t",$time, rst_n, start, AUTO, MAN, Control);
     end
     
     // Check expected behavior
@@ -126,8 +125,7 @@ module tb_tt_um_plc_prg;
         $display("AUTO Mode: Start signal applied at time %0t", $time);
         
         wait(Control == 1);
-        $display("AUTO Mode: Control activated at time %0t (after %0d cycles)", 
-                 $time, dut.counter);
+        $display("AUTO Mode: Control activated at time %0t",$time);
         
         // Wait for manual mode test
         wait(MAN == 1 && AUTO == 0);
