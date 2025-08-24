@@ -19,7 +19,7 @@ module tt_um_plc_prg (
 `ifdef COCOTB_SIM
     parameter TON_PRESET = 20;              // Short delay for cocotb sim
 `else
-    parameter TON_PRESET = 150_000_000_000;     // 3s delay at 50MHz (real HW)
+    parameter TON_PRESET = 150_000_000;     // 3s delay at 50MHz (real HW)
 `endif
     
     reg [$clog2(TON_PRESET):0] counter;
