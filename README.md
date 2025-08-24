@@ -1,41 +1,211 @@
-![](../../workflows/gds/badge.svg) ![](../../workflows/docs/badge.svg) ![](../../workflows/test/badge.svg) ![](../../workflows/fpga/badge.svg)
+# Ladder TinyTapeout
 
-# Tiny Tapeout Verilog Project Template
+🚀 **Ladder TinyTapeout** is an open-source digital design project built for the [TinyTapeout](https://tinytapeout.com) program.
+This project demonstrates how to implement, test, and verify a **Verilog-based ladder logic circuit** that can be synthesized for **FPGA** and fabricated as an **ASIC (Application-Specific Integrated Circuit)** through the TinyTapeout flow.
 
-- [Read the documentation for project](docs/info.md)
+---
 
-## What is Tiny Tapeout?
+## 📌 Project Overview
 
-Tiny Tapeout is an educational project that aims to make it easier and cheaper than ever to get your digital and analog designs manufactured on a real chip.
+This repository contains:
 
-To learn more and get started, visit https://tinytapeout.com.
+* A **Verilog design** (`project.v`) that implements the ladder-based digital circuit.
+* **Testbenches** written in Verilog and Python to verify correctness.
+* **GitHub Actions workflows** for automated testing, FPGA synthesis, and GDS generation.
+* **Documentation** to support easy usage and replication.
 
-## Set up your Verilog project
+The goal of this project is to showcase the **end-to-end flow of hardware design**:
 
-1. Add your Verilog files to the `src` folder.
-2. Edit the [info.yaml](info.yaml) and update information about your project, paying special attention to the `source_files` and `top_module` properties. If you are upgrading an existing Tiny Tapeout project, check out our [online info.yaml migration tool](https://tinytapeout.github.io/tt-yaml-upgrade-tool/).
-3. Edit [docs/info.md](docs/info.md) and add a description of your project.
-4. Adapt the testbench to your design. See [test/README.md](test/README.md) for more information.
+1. RTL design in Verilog
+2. Testbench simulation
+3. FPGA prototyping
+4. ASIC synthesis (via TinyTapeout)
 
-The GitHub action will automatically build the ASIC files using [OpenLane](https://www.zerotoasiccourse.com/terminology/openlane/).
+---
 
-## Enable GitHub actions to build the results page
+## ✨ Features
 
-- [Enabling GitHub Pages](https://tinytapeout.com/faq/#my-github-action-is-failing-on-the-pages-part)
+* ✅ Ladder logic-inspired Verilog implementation
+* ✅ Open-source ASIC-ready design flow
+* ✅ Fully tested with Verilog + Python testbenches
+* ✅ Supports GTKWave waveform visualization
+* ✅ CI/CD workflows for **testing, FPGA, and GDS**
+* ✅ Compatible with **TinyTapeout shuttle submission**
 
-## Resources
+---
 
-- [FAQ](https://tinytapeout.com/faq/)
-- [Digital design lessons](https://tinytapeout.com/digital_design/)
-- [Learn how semiconductors work](https://tinytapeout.com/siliwiz/)
-- [Join the community](https://tinytapeout.com/discord)
-- [Build your design locally](https://www.tinytapeout.com/guides/local-hardening/)
+## 📂 Repository Structure
 
-## What next?
+```
+.
+├── .devcontainer/          # Dev container for reproducible builds
+│   ├── Dockerfile
+│   ├── copy_tt_support_tools.sh
+│   └── devcontainer.json
+│
+├── .github/workflows/      # GitHub Actions automation
+│   ├── docs.yaml           # Build and deploy docs
+│   ├── fpga.yaml           # FPGA synthesis & tests
+│   ├── gds.yaml            # ASIC GDS flow
+│   └── test.yaml           # Simulation + verification
+│
+├── .vscode/                # VSCode project configuration
+│   ├── extensions.json
+│   └── settings.json
+│
+├── docs/                   # Documentation
+│   └── info.md
+│
+├── src/                    # Source design
+│   ├── config.json
+│   └── project.v           # Main Verilog design
+│
+├── test/                   # Testing framework
+│   ├── Makefile
+│   ├── README.md
+│   ├── requirements.txt    # Python dependencies
+│   ├── tb.v                # Verilog testbench
+│   ├── tb.gtkv             # GTKWave config
+│   └── test.py             # Python-based test runner
+│
+├── .gitignore
+├── LICENSE
+├── README.md               # Project documentation
+└── info.yaml               # TinyTapeout configuration
+```
 
-- [Submit your design to the next shuttle](https://app.tinytapeout.com/).
-- Edit [this README](README.md) and explain your design, how it works, and how to test it.
-- Share your project on your social network of choice:
-  - LinkedIn [#tinytapeout](https://www.linkedin.com/search/results/content/?keywords=%23tinytapeout) [@TinyTapeout](https://www.linkedin.com/company/100708654/)
-  - Mastodon [#tinytapeout](https://chaos.social/tags/tinytapeout) [@matthewvenn](https://chaos.social/@matthewvenn)
-  - X (formerly Twitter) [#tinytapeout](https://twitter.com/hashtag/tinytapeout) [@tinytapeout](https://twitter.com/tinytapeout)
+---
+
+## 🔧 Installation & Setup
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/Sruthi192005/ladder_tinytapeout.git
+cd ladder_tinytapeout
+```
+
+### 2. Install Python Dependencies
+
+```bash
+pip install -r test/requirements.txt
+```
+
+### 3. Build & Run Simulation
+
+```bash
+make -C test
+```
+
+### 4. View Waveforms with GTKWave
+
+```bash
+gtkwave test/tb.gtkv
+```
+
+---
+
+## 🧪 Testing
+
+Two test flows are supported:
+
+### **Verilog Testbench (tb.v)**
+
+Run simulations via `Icarus Verilog` or `Verilator`:
+
+```bash
+iverilog -o sim test/tb.v src/project.v
+vvp sim
+```
+
+### **Python Test (test.py)**
+
+Uses `cocotb` or direct Python drivers for simulation:
+
+```bash
+python3 test/test.py
+```
+
+---
+
+## 🏷️ GitHub Workflows
+
+The repository uses GitHub Actions for CI/CD automation:
+
+* **`test.yaml`** → Runs simulation tests on every commit
+* **`fpga.yaml`** → Builds FPGA bitstreams
+* **`gds.yaml`** → Generates GDS layout for ASIC fabrication
+* **`docs.yaml`** → Deploys project documentation
+
+You can view workflow runs under the **Actions** tab of this repository.
+
+---
+
+## 💡 FPGA Flow
+
+The design can be deployed on FPGA boards for hardware validation.
+
+* Supported FPGA toolchains (example):
+
+  * Xilinx Vivado
+  * Lattice iCE40 (via Yosys + nextpnr)
+
+To run the FPGA workflow locally:
+
+```bash
+make fpga
+```
+
+---
+
+## 🏠 ASIC (TinyTapeout) Flow
+
+This project is structured to be **TinyTapeout-compatible**.
+
+* `info.yaml` → Defines metadata for submission
+* `src/project.v` → RTL design for synthesis
+* Workflows (`gds.yaml`) → Generate final ASIC layout
+
+By submitting to TinyTapeout, this design can be fabricated into silicon.
+
+---
+
+## 🤝 Contribution Guide
+
+Contributions are welcome! 🚀
+
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Submit a Pull Request
+
+Please ensure your contributions include:
+
+* Proper documentation
+* Passing test cases
+
+---
+
+## 📜 License
+
+This project is licensed under the **MIT License**.
+See [LICENSE](LICENSE) for details.
+
+---
+
+## 🙏 Acknowledgements
+
+* [TinyTapeout](https://tinytapeout.com) for enabling open-source ASIC development
+* [YosysHQ](https://yosyshq.net/) for open-source synthesis tools
+* [Icarus Verilog](http://iverilog.icarus.com/) for simulation
+* [GTKWave](http://gtkwave.sourceforge.net/) for waveform viewing
+* The open-source hardware community ❤️
+
+---
+
+## 📧 Contact
+
+Author: **Sruthi192005**
+GitHub: [@Sruthi192005](https://github.com/Sruthi192005)
+
+---
