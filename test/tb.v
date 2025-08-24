@@ -100,7 +100,7 @@ module tb_tt_um_plc_prg;
         #50;
         
         $display("=== Test Complete ===");
-        $finish;
+        #1000000 $finish;
     end
     
     // Monitor key signals
