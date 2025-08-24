@@ -136,6 +136,7 @@ module tb_tt_um_plc_prg;
         end else begin
             $display("MANUAL Mode: Control not immediately active - FAIL");
         end
+        #100000;
     end
     
 endmodule
