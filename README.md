@@ -1,3 +1,5 @@
+
+![](../../workflows/gds/badge.svg) ![](../../workflows/docs/badge.svg) ![](../../workflows/test/badge.svg) ![](../../workflows/fpga/badge.svg)
 # Ladder TinyTapeout
 
 🚀 **Ladder TinyTapeout** is an open-source digital design project built for the [TinyTapeout](https://tinytapeout.com) program.
