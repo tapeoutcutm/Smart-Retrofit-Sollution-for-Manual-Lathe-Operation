@@ -8,7 +8,7 @@ project:
   clock_hz:     1000000                     # Example: 1 MHz PLC clock (set 0 if you don’t use a clock)
 
   # How many tiles your design occupies? A single tile is about 167x108 uM.
-  tiles: "2x2"                              # Adjust if your design is bigger/smaller
+  tiles: "1x1"                              # Adjust if your design is bigger/smaller
 
   # Your top module name must start with "tt_um_". Make it unique by including your github username:
   top_module:  "tt_um_plc_prg"
